@@ -1,2 +1,4 @@
 *.input
 *.code-workspace
+__pycache__/
+.metals/

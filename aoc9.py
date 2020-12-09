@@ -3,7 +3,7 @@ from aoc1 import find_two
 PREAMBLE_LENGTH = 25
 
 def find_first_weakness(numbers):
-    # O(n^2)
+    # O(n)
     preamble = numbers[:PREAMBLE_LENGTH]
     numbers_tail = numbers[PREAMBLE_LENGTH:]
 

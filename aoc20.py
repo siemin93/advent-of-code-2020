@@ -108,93 +108,6 @@ def find_matching_to_my_right(my_tile_id, my_tile, tiles_map, already_used=None)
                 matching.append((tile_id, i))
     return matching
 
-# def find_matching(my_tile_id, my_tile, tiles_map):
-#     matching = []
-#     for tile_id, tile in tiles_map.items():
-#         if tile_id == my_tile_id:
-#             continue
-#         if my_tile[0] == tile[0]:
-#             # matching by tops
-
-def dfs(current_board, x, y, tiles_map):
-    my_tile_id, orientation = current_board[x][y]
-
-    already_used = set()
-    for row in range(len(current_board)):
-        for column in range(len(current_board)):
-            if current_board[row][column] != None:
-                already_used.add(current_board[row][column][0])
-
-    possible_boards = []
-
-    # x - wiersz
-    # y - kolumna
-
-    # w prawo
-    if y+1 < len(current_board) and current_board[x][y+1] is None:
-        possible_on_the_right = find_matching_to_my_right(my_tile_id, tiles_map[my_tile_id][orientation], tiles_map)
-        for p in possible_on_the_right:
-            id, orient = p
-            b = copy.deepcopy(current_board)
-            b[x][y+1] = (id, orient)
-            possible_boards.append()
-
-    # w dol
-    if x+1 < len(current_board) and current_board[x+1][y] is None:
-        possible_on_the_bottom = find_matching_to_my_bottom(my_tile_id, tiles_map[my_tile_id][orientation], tiles_map)
-        for p in possible_on_the_bottom:
-            id, orient = p
-            b = copy.deepcopy(current_board)
-            b[x][y+1] = (id, orient)
-            possible_boards.append()
-
-
-    # if x+1 < len(current_board) and y+1 < len(current_board):
-    #     possible_on_the_right = find_matching_to_my_right(my_tile_id, tiles_map[my_tile_id][orientation], tiles_map, already_used)
-    #     possible_on_the_bottom = find_matching_to_my_bottom(my_tile_id, tiles_map[my_tile_id][orientation], tiles_map, already_used)
-
-    #     print('possible_on_the_right', possible_on_the_right)
-    #     print('possible_on_the_bottom', possible_on_the_bottom)
-
-    #     for p in possible_on_the_right:
-    #         id, orient = p
-    #         for p2 in possible_on_the_bottom:
-    #             id2, orient2 = p2
-
-    #             b = copy.deepcopy(current_board)
-    #             b[x][y+1] = (id, orient)
-    #             b[x+1][y] = (id2, orient2)
-    #             possible_boards.append(b)
-
-    # elif x+1 < len(current_board):
-    #     possible_on_the_right = find_matching_to_my_right(my_tile_id, tiles_map[my_tile_id][orientation], tiles_map, already_used)
-    #     print('possible_on_the_right', possible_on_the_right)
-    #     for p in possible_on_the_right:
-    #         id, orient = p
-    #         b = copy.deepcopy(current_board)
-    #         b[x][y+1] = (id, orient)
-    #         possible_boards.append(b)
-
-    # elif y+1 < len(current_board):
-    #     possible_on_the_bottom = find_matching_to_my_bottom(my_tile_id, tiles_map[my_tile_id][orientation], tiles_map, already_used)
-    #     print('possible_on_the_bottom', possible_on_the_bottom)
-    #     for p in possible_on_the_bottom:
-    #         id, orient = p
-    #         b = copy.deepcopy(current_board)
-    #         b[x+1][y] = (id, orient)
-    #         possible_boards.append(b)
-
-    # else:
-    #     return [current_board]
-
-    new_possible_boards = []
-    for b in possible_boards:
-        if x+1 < len(current_board):
-            new_possible_boards.extend(dfs(b, x+1, y, tiles_map))
-        if y+1 < len(current_board):
-            new_possible_boards.extend(dfs(b, x, y+1, tiles_map))
-
-    return new_possible_boards
 
 def fill_column(board, column, tiles_map):
     possible_boards = [board]
@@ -251,12 +164,14 @@ def fill_column(board, column, tiles_map):
 
     return possible_boards
 
+
 if __name__ == '__main__':
 
     with open('./20.input', 'r') as f:
         lines = f.read().split('\n\n')
 
     tiles_map = {}
+    tiles_original_map = {}
 
     for line in lines:
         line = line.split('\n')
@@ -265,6 +180,7 @@ if __name__ == '__main__':
             line.pop(-1)
         line.pop(0)
 
+        tiles_original_map[tile_id] = line
         tiles_map[tile_id] = get_borders(line)
 
     for tile_id, tile in tiles_map.items():
@@ -298,3 +214,6 @@ if __name__ == '__main__':
     # print(final_board)
 
     final_board = [[(1951, 2), (2311, 2), (3079, 0)], [(2729, 2), (1427, 2), (2473, 6)], [(2971, 2), (1489, 2), (1171, 1)]]
+    for elem in final_board:
+        tile_id, tile_orientation = elem
+        print(tiles_original_map[tile_id])

@@ -4,6 +4,8 @@ import math
 
 import numpy as np
 
+# GIVE ME BACK MY SUNDAY
+
 def flip_horizontal(borders):
     borders[1], borders[3] = borders[3], borders[1]
     borders[0] = borders[0][::-1]
@@ -36,48 +38,47 @@ def get_borders(tile):
         ''.join(left_border)
     ]
 
-def orientations(tile):
+def orientations(tile, original_tile):
     already_exists = set()
     result = []
+    original_tiles = []
 
     fns = [
         [],
 
         [flip_horizontal],
-        [flip_vertical],
-
-        [flip_horizontal, flip_vertical],
-        [flip_vertical, flip_horizontal],
 
         [rotate_right],
         [rotate_right, flip_horizontal],
-        [rotate_right, flip_vertical],
-        [rotate_right, flip_horizontal, flip_vertical],
-        [rotate_right, flip_vertical, flip_horizontal],
 
         [rotate_right, rotate_right],
         [rotate_right, rotate_right, flip_horizontal],
-        [rotate_right, rotate_right, flip_vertical],
-        [rotate_right, rotate_right, flip_horizontal, flip_vertical],
-        [rotate_right, rotate_right, flip_vertical, flip_horizontal],
 
         [rotate_right, rotate_right, rotate_right],
         [rotate_right, rotate_right, rotate_right, flip_horizontal],
-        [rotate_right, rotate_right, rotate_right, flip_vertical],
-        [rotate_right, rotate_right, rotate_right, flip_horizontal, flip_vertical],
-        [rotate_right, rotate_right, rotate_right, flip_vertical, flip_horizontal],
     ]
 
     for transformations in fns:
         new_tile = copy.deepcopy(tile)
+        new_original_tile = np.array(copy.deepcopy(original_tile))
         for f in transformations:
             f(new_tile)
 
+            if f.__name__ == 'flip_horizontal':
+                new_original_tile = np.flip(new_original_tile, axis=1)
+
+            if f.__name__ == 'flip_vertical':
+                new_original_tile = np.flip(new_original_tile, axis=0)
+
+            if f.__name__ == 'rotate_right':
+                new_original_tile = np.rot90(new_original_tile, 3)
+
         if not ''.join(new_tile) in already_exists:
             result.append(new_tile)
+            original_tiles.append(new_original_tile)
             already_exists.add(''.join(new_tile))
 
-    return result
+    return result, original_tiles
 
 def find_matching_to_my_bottom(my_tile_id, my_tile, tiles_map, already_used=None):
     if already_used == None:
@@ -164,7 +165,6 @@ def fill_column(board, column, tiles_map):
 
     return possible_boards
 
-
 if __name__ == '__main__':
 
     with open('./20.input', 'r') as f:
@@ -180,40 +180,98 @@ if __name__ == '__main__':
             line.pop(-1)
         line.pop(0)
 
-        tiles_original_map[tile_id] = line
+        tiles_original_map[tile_id] = [list(l) for l in line]
         tiles_map[tile_id] = get_borders(line)
 
     for tile_id, tile in tiles_map.items():
-        tiles_map[tile_id] = orientations(tile)
+        tiles_map[tile_id], tiles_original_map[tile_id] = orientations(tile, tiles_original_map[tile_id])
 
-    # board_size = int(math.sqrt(len(tiles_map)))
+    board_size = int(math.sqrt(len(tiles_map)))
 
-    # final_board = None
+    final_board = None
 
-    # for tile_id, tile_orientations in tiles_map.items():
-    #     if final_board != None:
-    #         break
-    #     for i, o in enumerate(tile_orientations):
-    #         board = [[None for i in range(board_size)] for j in range(board_size)]
-    #         board[0][0] = (tile_id, i)
+    for tile_id, tile_orientations in tiles_map.items():
+        if final_board != None:
+            break
+        for i, o in enumerate(tile_orientations):
+            board = [[None for i in range(board_size)] for j in range(board_size)]
+            board[0][0] = (tile_id, i)
 
-    #         boards = [board]
+            boards = [board]
 
-    #         for column in range(0, len(board)):
-    #             new_boards = []
-    #             for b in boards:
-    #                 new_boards.extend(fill_column(b, column, tiles_map))
-    #             boards = new_boards
+            for column in range(0, len(board)):
+                new_boards = []
+                for b in boards:
+                    new_boards.extend(fill_column(b, column, tiles_map))
+                boards = new_boards
 
-    #         if len(boards) > 0:
-    #             dd = boards[0]
-    #             print(dd[0][0][0] * dd[-1][-1][0] * dd[0][-1][0] * dd[-1][0][0])
-    #             final_board = dd
-    #             break
+            if len(boards) > 0:
+                dd = boards[0]
+                print(dd[0][0][0] * dd[-1][-1][0] * dd[0][-1][0] * dd[-1][0][0])
+                final_board = dd
+                break
 
-    # print(final_board)
+    final_image = [[None for i in range(board_size)] for j in range(board_size)]
+    for i, row in enumerate(final_board):
+        for j, column in enumerate(row):
+            tile_id, tile_orientation = column
 
-    final_board = [[(1951, 2), (2311, 2), (3079, 0)], [(2729, 2), (1427, 2), (2473, 6)], [(2971, 2), (1489, 2), (1171, 1)]]
-    for elem in final_board:
-        tile_id, tile_orientation = elem
-        print(tiles_original_map[tile_id])
+            a = np.array(tiles_original_map[tile_id][tile_orientation])
+            a = np.delete(a, 0, 0)
+            a = np.delete(a, -1, 0)
+            a = np.delete(a, -1, 1)
+            a = np.delete(a, 0, 1)
+
+            final_image[i][j] = a
+
+    new_final_image = []
+    for row in final_image:
+        new_final_image.append(np.concatenate(row, axis=1))
+
+    np_final = np.concatenate(new_final_image)
+
+    monster = [
+        '..................#.',
+        '#....##....##....###',
+        '.#..#..#..#..#..#...',
+    ]
+
+    def image_rotations(np_image):
+        for _ in range(4):
+            yield np_image
+            yield np.flip(np_image, axis=1)
+            np_image = np.rot90(np_image, 3)
+
+    for np_image in image_rotations(np_final):
+        image = []
+        for l in np_image:
+            image.append(''.join(l))
+
+        count_monsters = 0
+
+        for y in range(len(image)-len(monster)):
+            for x in range(len(image)-len(monster[0])):
+                match = True
+                for i in range(len(monster)):
+                    for j in range(len(monster[i])):
+                        if monster[i][j] == '#' and image[y+i][x+j] != '#':
+                            match = False
+                            break
+
+                    if not match:
+                        break
+
+                if match:
+                    count_monsters += 1
+
+        if count_monsters > 0:
+            break
+
+    final_strings = []
+    for l in np_final:
+        final_strings.append(''.join(l))
+
+    print(f'monsters {count_monsters}')
+    hash_all = ''.join(final_strings).count('#')
+    hash_monster = ''.join(monster).count('#')
+    print(hash_all - hash_monster * count_monsters)
